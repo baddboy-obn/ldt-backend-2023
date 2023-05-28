@@ -77,7 +77,7 @@ export class AppController {
 
     const _data = await initCheckout({
       mkbDataPath: `${process.cwd()}/public/compared_result.csv`,
-      dataSetPath: `${process.cwd()}/dist/public/`,
+      dataSetPath: `${process.cwd()}/public/`,
       resultCSV: `${process.cwd()}/public/result/${dataSetPath.fileName.split('.')[0]}.csv`,
       resultEXCEL: `${process.cwd()}/public/result/${dataSetPath.fileName.split('.')[0]}.xlsx`,
       // resultJSON: path.resolve(__dirname, `../public/result/${dataSetPath.fileName.split('.')[0]}.pdf`),
