@@ -5,7 +5,6 @@ import {ConfigService} from "@nestjs/config";
 import {Logger, ValidationPipe} from "@nestjs/common";
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import process from "process";
 
 const logger = new Logger();
 
