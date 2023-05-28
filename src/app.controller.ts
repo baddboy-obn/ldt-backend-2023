@@ -19,7 +19,6 @@ import {CreateInitDto} from "./CreateInitDto";
 import {AuditPageResult} from "./ResponseInitDto";
 import {initCheckout} from "./index";
 import * as path from "path";
-import * as process from "process";
 
 @Controller()
 export class AppController {
@@ -47,7 +46,7 @@ export class AppController {
   @UseInterceptors(FileExtender)
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
-      destination: `${process.cwd()}/public`,
+      destination: './public',
       filename: (req, file, cb) => {
         const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('')
         return cb(null, `${randomName}${extname(file.originalname)}`)
@@ -76,16 +75,16 @@ export class AppController {
     const dataSetPath = await this.fileService.getOne(data.fileId)
 
     const _data = await initCheckout({
-      mkbDataPath: `${process.cwd()}/public/compared_result.csv`,
-      dataSetPath: `${process.cwd()}/public/`,
-      resultCSV: `${process.cwd()}/public/result/${dataSetPath.fileName.split('.')[0]}.csv`,
-      resultEXCEL: `${process.cwd()}/public/result/${dataSetPath.fileName.split('.')[0]}.xlsx`,
+      mkbDataPath: path.resolve(__dirname, "../public/compared_result.csv"),
+      dataSetPath: path.resolve(__dirname, "../public/" + dataSetPath.fileName),
+      resultCSV: path.resolve(__dirname, `../public/result/${dataSetPath.fileName.split('.')[0]}.csv`),
+      resultEXCEL: path.resolve(__dirname, `../public/result/${dataSetPath.fileName.split('.')[0]}.xlsx`),
       // resultJSON: path.resolve(__dirname, `../public/result/${dataSetPath.fileName.split('.')[0]}.pdf`),
       checkoutData: {
         ...data,
         resultDocs: {
-          xl_href: `${process.cwd()}/public/result/${dataSetPath.fileName.split('.')[0]}.xlsx`,
-          csv_href: `${process.cwd()}/public/result/${dataSetPath.fileName.split('.')[0]}.csv`,
+          xl_href: `/public/result/${dataSetPath.fileName.split('.')[0]}.xlsx`,
+          csv_href: `/public/result/${dataSetPath.fileName.split('.')[0]}.csv`,
         }
       }
     })
