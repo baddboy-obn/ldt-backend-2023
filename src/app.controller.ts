@@ -20,6 +20,7 @@ import * as _ from 'lodash';
 import {MkbCategoryService} from "./mkb/mkb.category.service";
 import {PatientService} from "./patient/patient.service";
 import {TSex} from "./patient/types/TSex";
+import {MbkCreateDto} from "./mkb/dto/MbkCreateDto";
 
 @Controller()
 export class AppController {
@@ -128,6 +129,12 @@ export class AppController {
           }
         }
 
+        if(item == 'RECOMMENDATIONS') {
+          if(typeof items[item] == 'string') {
+            items[item] = iconv.decode(items[item], 'utf8').toString()
+          }
+        }
+
         Object.assign(res, {
           [item]: items[item]
         })
@@ -135,20 +142,24 @@ export class AppController {
       })
 
       // console.log(res)
+      await this.mbkService.setOne({
+        mkb_code: res['MKB_CODE'],
+        recommendation: res['RECOMMENDATIONS']
+      } as MbkCreateDto)
 
       // if(res['use_freq'] && res['del_freq'] && typeof res['del_freq'] !== 'string') {
       //   await this.mbkService.setOne(res as MbkCreateDto)
       // }
-      const _res = {
-        patientId: res['ID пациента'] ,
-        mkbCode: res['Код МКБ-10'],
-        birth: res['Дата рождения пациента'],
-        sex: res['Пол пациента'],
-        doctorProfession: res['Должность'],
-        diagnose: res['Диагноз'],
-        diagnosticDate: res['Дата оказания услуги'],
-        diagnostic: res['Назначения'].split('\r\n').filter(item => item.length > 0)
-      }
+      // const _res = {
+      //   patientId: res['ID пациента'] ,
+      //   mkbCode: res['Код МКБ-10'],
+      //   birth: res['Дата рождения пациента'],
+      //   sex: res['Пол пациента'],
+      //   doctorProfession: res['Должность'],
+      //   diagnose: res['Диагноз'],
+      //   diagnosticDate: res['Дата оказания услуги'],
+      //   diagnostic: res['Назначения'].split('\r\n').filter(item => item.length > 0)
+      // }
 
       // const code = {
       //   nkbCode: res['CODE'],
@@ -158,7 +169,7 @@ export class AppController {
       // await this.mkbCategoryService.setOne(code)
 
 
-      result.push(_res)
+      result.push(res)
 
       i++;
     }
@@ -167,29 +178,29 @@ export class AppController {
     // console.log(r)
     // await this.patientService.
 
-    Object.keys(r).map(async item => {
-      const patientProperty = r[item].map(prop => {
-        const diagnostic = prop.diagnostic.map(diag => {
-          return {
-            name: diag,
-            mkbCode: null
-          }
-        })
-        return {
-          diagnose: prop.diagnose,
-          diagnosticDate: prop.diagnosticDate,
-          doctorProfession: prop.doctorProfession,
-          diagnostic
-        }
-      })
-      // console.log(item)
-      await this.patientService.setOne({
-        sex: r[item][0].sex == 'Муж' ? TSex.male : TSex.female ,
-        patientId: r[item][0].patientId,
-        birth: r[item][0].birth,
-        property: patientProperty
-      })
-    })
+    // Object.keys(r).map(async item => {
+    //   const patientProperty = r[item].map(prop => {
+    //     const diagnostic = prop.diagnostic.map(diag => {
+    //       return {
+    //         name: diag,
+    //         mkbCode: null
+    //       }
+    //     })
+    //     return {
+    //       diagnose: prop.diagnose,
+    //       diagnosticDate: prop.diagnosticDate,
+    //       doctorProfession: prop.doctorProfession,
+    //       diagnostic
+    //     }
+    //   })
+    //   // console.log(item)
+    //   await this.patientService.setOne({
+    //     sex: r[item][0].sex == 'Муж' ? TSex.male : TSex.female ,
+    //     patientId: r[item][0].patientId,
+    //     birth: r[item][0].birth,
+    //     property: patientProperty
+    //   })
+    // })
 
     // Object.keys(r).map(async item => {
     //   console.log(r[item])

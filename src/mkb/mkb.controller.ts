@@ -11,7 +11,7 @@ export class MkbController {
   @Inject()
   private readonly mbkService: MkbService;
 
-  @Get('/щne/:id')
+  @Get('/one/:id')
   async getOne(@Param('id') id: IMkb['id']) {
     return await this.mbkService.getOne(id);
   }
