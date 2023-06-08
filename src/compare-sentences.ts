@@ -27,9 +27,3 @@ export function compareSentences(sentence1: string, sentence2: string): number {
   const distance: number = levenshteinDistance(sentence1, sentence2);
   return ((maxLength - distance) / maxLength) * 100;
 }
-
-// Пример использования:
-const sentence1: string = "Рентгенография околоносовых пазух";
-const sentence2: string =
-  "Компьютерная томография придаточных пазух носа, гортани";
-const similarity = compareSentences(sentence1, sentence2);

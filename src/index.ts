@@ -1,10 +1,10 @@
 import { compareSentences } from "./compare-sentences";
 import { randomUUID } from "crypto";
+import { CreateExcelSheet } from "./create-excel-sheet";
+// import path = require("path");
 
-const excel = require("excel4node");
 const fs = require("fs");
 const { parse } = require("csv-parse");
-const path = require("path");
 const xlsx_parse = require("node-xlsx").default;
 const { stringify } = require("csv-stringify");
 
@@ -63,47 +63,52 @@ type TDatasetRow = [
   string
 ];
 
-function percentToColor(percent?: string) {
-  if (!percent || !percent.split) {
-    return undefined;
-  }
-
-  const num = Number(percent.split(" ")[0]);
-
-  if (num > 90) {
-    return "#34D399";
-  } else if (num > 40) {
-    return "#FCD34D";
-  } else {
-    return "#EC4899";
-  }
-}
-
-export const initCheckout = (props: {
+export const initCheckout: (props: {
   mkbDataPath: string; // База с МКБ
   dataSetPath: string; // Датасет с клиента
   resultCSV: string; // Результат CSV
   resultEXCEL: string; // Результат XLSX
   checkoutData: {
-    name: string;
-    type: string;
-    status: string;
-    dateStart: string;
-    dateEnd: string;
+    name: string; // Название проверки
+    type: string; // Тип проверки
+    status: string; // Статус проверки
+    dateStart: string; // Дата начала проверки
+    dateEnd: string; // Дата окончания проверки
     responsible: {
+      // Ответственный
       id: string;
       firstName: string;
       lastName: string;
       patronymic: string;
       role: string;
     };
-    auditReason: string;
+    auditReason: string; // Причина проверки
     resultDocs: {
-      xl_href: string;
-      csv_href: string;
+      xl_href: string; // Путь до XLSX файла отчёта
+      csv_href: string; // Путь до CSV файла отчёта
     };
   };
-}) =>
+}) => Promise<{
+  result: TAppointsResult[];
+  allStats: TAllStats;
+  resultDocs: {
+    xl_href: string;
+    csv_href: string;
+  };
+  name: string;
+  type: string;
+  status: string;
+  dateStart: string;
+  dateEnd: string;
+  responsible: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    patronymic: string;
+    role: string;
+  };
+  auditReason: string;
+}> = async (props) =>
   new Promise((resolve) => {
     {
       const writableStream = fs.createWriteStream(props.resultCSV);
@@ -283,7 +288,10 @@ export const initCheckout = (props: {
                 avCount++;
               }
 
-              const resAverage = Math.ceil(avSum / (avCount ?? 1));
+              const resAverage =
+                auditResults.resultsList.length > 1
+                  ? Math.ceil(avSum / (avCount ?? 1))
+                  : Math.max(result[1].score, result[2].score, result[3].score);
 
               auditResults = {
                 resultsList: [...auditResults.resultsList, result],
@@ -362,46 +370,7 @@ export const initCheckout = (props: {
 
         stringifier.pipe(writableStream);
 
-        const workbook = new excel.Workbook({
-          logLevel: 0,
-        });
-        const worksheet = workbook.addWorksheet("Результат проверки");
-
-        const headStyle = workbook.createStyle({
-          font: {
-            color: "#1E40AF",
-            size: 12,
-            bold: true,
-          },
-        });
-
-        const dangerStyle = workbook.createStyle({
-          font: {
-            color: "#EC4899",
-          },
-        });
-
-        worksheet.cell(1, 1).string("Пол").style(headStyle);
-        worksheet.cell(1, 2).string("Дата рождения").style(headStyle);
-        worksheet.cell(1, 3).string("id").style(headStyle);
-        worksheet.cell(1, 4).string("МКБ").style(headStyle);
-        worksheet.cell(1, 5).string("Заболевание").style(headStyle);
-        worksheet.cell(1, 6).string("Дата приема").style(headStyle);
-        worksheet.cell(1, 7).string("Врач").style(headStyle);
-        worksheet.cell(1, 8).string("Рекомендации врача").style(headStyle);
-        worksheet.cell(1, 9).string("Ошибка").style(dangerStyle);
-        worksheet
-          .cell(1, 10)
-          .string("Средний результат (в %)")
-          .style(headStyle);
-        worksheet.cell(1, 11).string("Мин. результат (в %)").style(headStyle);
-        worksheet.cell(1, 12).string("Макс. результат (в %)").style(headStyle);
-
-        let i_sec = 0;
-        for (let i = 13; i < resColumns.length + 13; i++) {
-          worksheet.cell(1, i).string(resColumns[i_sec]).style(headStyle);
-          i_sec++;
-        }
+        const excelTable = new CreateExcelSheet(resColumns);
 
         result.forEach((res, i) => {
           const jsonResultItem: TAppointsResult = {
@@ -470,56 +439,14 @@ export const initCheckout = (props: {
           }
 
           stringifier.write(resultRow);
-          worksheet.cell(i + 2, 1).string(resultRow[0]);
-          worksheet.cell(i + 2, 2).string(resultRow[1]);
-          worksheet.cell(i + 2, 3).number(resultRow[2]);
-          worksheet.cell(i + 2, 4).string(resultRow[3]);
-          worksheet.cell(i + 2, 5).string(resultRow[4]);
-          worksheet.cell(i + 2, 6).string(resultRow[5]);
-          worksheet.cell(i + 2, 7).string(resultRow[6]);
-          worksheet.cell(i + 2, 8).string(resultRow[7]);
-          worksheet
-            .cell(i + 2, 9)
-            .string(String(resultRow[8]))
-            .style({
-              font: {
-                color: percentToColor(resultRow[8] as string),
-              },
-            });
-          worksheet
-            .cell(i + 2, 10)
-            .string(String(resultRow[9]) ?? "")
-            .style({
-              font: {
-                color: percentToColor(resultRow[9] as string),
-              },
-            });
-          worksheet
-            .cell(i + 2, 11)
-            .string(String(resultRow[10]) ?? "")
-            .style({
-              font: {
-                color: percentToColor(resultRow[10] as string),
-              },
-            });
-          worksheet
-            .cell(i + 2, 12)
-            .string(String(resultRow[11]) ?? "")
-            .style({
-              font: {
-                color: percentToColor(resultRow[11] as string),
-              },
-            });
-          worksheet.cell(i + 2, 13).string(String(resultRow[12]) ?? "");
-          worksheet.cell(i + 2, 14).string(String(resultRow[13]) ?? "");
-          worksheet.cell(i + 2, 15).string(String(resultRow[15]) ?? "");
+          excelTable.fillByRow(resultRow, i);
         });
 
         jsonStats.unchecked += errorsCount;
 
-        workbook.write(props.resultEXCEL);
+        excelTable.workbook.write(props.resultEXCEL);
 
-        resolve({
+        const fullResultData = {
           result: jsonResults,
           allStats: jsonStats,
           resultDocs: props.checkoutData.resultDocs,
@@ -530,7 +457,9 @@ export const initCheckout = (props: {
           dateEnd: props.checkoutData.dateEnd,
           responsible: props.checkoutData.responsible,
           auditReason: props.checkoutData.auditReason,
-        });
+        };
+
+        resolve(fullResultData);
       };
     }
   });
@@ -550,3 +479,31 @@ type TAuditResult = {
   max: number;
   min: number;
 };
+
+// initCheckout({
+//   mkbDataPath: path.resolve(__dirname, "../data/compared_result.csv"),
+//   dataSetPath: path.resolve(__dirname, "../data/dataset.xlsx"),
+//   resultCSV: path.resolve(__dirname, "../result/res.csv"),
+//   resultEXCEL: path.resolve(__dirname, "../result/res.xlsx"),
+//   checkoutData: {
+//     name: "",
+//     type: "",
+//     status: "",
+//     dateStart: "",
+//     dateEnd: "",
+//     responsible: {
+//       id: "",
+//       firstName: "",
+//       lastName: "",
+//       patronymic: "",
+//       role: "",
+//     },
+//     auditReason: "",
+//     resultDocs: {
+//       xl_href: path.resolve(__dirname, "../result/res.xlsx"),
+//       csv_href: path.resolve(__dirname, "../result/res.csv"),
+//     },
+//   },
+// }).then((r) => {
+//   console.log(r);
+// });
