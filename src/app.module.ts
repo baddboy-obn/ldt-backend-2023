@@ -6,7 +6,6 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import { FilesModule } from './files/files.module';
 import {FilesEntity} from "./files/entities/files.entity";
 import {ResultEntity} from "./files/entities/result.entity";
-import { ShopModule } from './shop/shop.module';
 
 @Module({
   imports: [
@@ -35,7 +34,6 @@ import { ShopModule } from './shop/shop.module';
       }
     ),
     FilesModule,
-    ShopModule,
   ],
   controllers: [AppController],
   providers: [AppService],
